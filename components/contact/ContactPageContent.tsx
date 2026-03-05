@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Phone, MessageCircle, Send, CheckCircle, MapPin, Mail, Clock } from "lucide-react";
-import emailjs from '@emailjs/browser';
+
 import { BUSINESS } from "@/lib/constants";
 
 const serviceOptions = [
@@ -33,7 +33,7 @@ export default function ContactPageContent() {
         return () => observer.disconnect();
     }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg("");
 
@@ -54,39 +54,15 @@ export default function ContactPageContent() {
             return;
         }
 
-        setLoading(true);
-
-        try {
-            // Read keys from environment variables
-            const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "default_service";
-            const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "default_template";
-            const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "default_public_key";
-
-            if (serviceId === "your_emailjs_service_id_here" || serviceId === "default_service") {
-                console.warn("EmailJS is running in simulated mode. Please configure .env.local with real keys to actually send emails.");
-                // Simulate network delay if missing keys
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-            } else {
-                await emailjs.send(
-                    serviceId,
-                    templateId,
-                    {
-                        name: formState.name,
-                        phone: formState.phone,
-                        service: formState.service,
-                        message: formState.message || "No additional message",
-                    },
-                    publicKey
-                );
-            }
-
-            setSubmitted(true);
-        } catch (error) {
-            console.error("Failed to send email:", error);
-            setErrorMsg("Failed to send the enquiry. Please try WhatsApp instead.");
-        } finally {
-            setLoading(false);
+        // Build mailto link with form data
+        const subject = `Enquiry: ${formState.service}`;
+        let body = `Name: ${formState.name}\nPhone: ${formState.phone}\nService Needed: ${formState.service}`;
+        if (formState.message) {
+            body += `\n\nMessage:\n${formState.message}`;
         }
+
+        const mailtoUrl = `mailto:${BUSINESS.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailtoUrl, "_self");
     };
 
     const handleWhatsAppSend = () => {
